@@ -24,6 +24,8 @@ tmux の **コピーモード**で選択したテキストを翻訳し、ター�
   翻訳先を英語に切り替えます。
 - **キャッシュ**により、同じ文の再翻訳は即時かつオフラインでも動作。
 - **クリップボードへのコピー**（任意）。
+- **ローディング表示** — バックエンドへのリクエスト中、ポップアップが即座に開き
+  「Translating…」と表示されます。
 
 ## 動作要件
 
@@ -115,6 +117,7 @@ tmux source-file ~/.tmux.conf
 | `@translate_target_lang_alt` | `en` | 原文が `@translate_target_lang` と同じ場合の代替変換先 |
 | `@translate_cache` | `on` | `$XDG_CACHE_HOME/tmux-translate` に翻訳をキャッシュ |
 | `@translate_clipboard` | `off` | 翻訳結果をシステムクリップボードへコピー |
+| `@translate_pager` | `less -R` | 結果表示に使うページャコマンド |
 | `@translate_popup_width` | `80%` | ポップアップ幅の上限（内容に合わせて縮小） |
 | `@translate_popup_height` | `80%` | ポップアップ高さの上限（内容に合わせて縮小） |
 
@@ -131,16 +134,20 @@ set -g @plugin 'mrsmsn/tmux-translator'
 
 ## 仕組み
 
-`copy-pipe-and-cancel` が選択範囲を `scripts/translate.sh` にパイプし、スクリプトは
+`copy-pipe-and-cancel` が選択範囲を `scripts/translate.sh`（エントリ段）にパイプし、
+エントリ段は選択範囲からポップアップのサイズを見積もり、`scripts/render.sh`（ポップ
+アップ段）を実行する `tmux display-popup` を開きます。ポップアップ内で `render.sh` は
 次を行います:
 
-1. 設定された `@options` を読み込む、
-2. キャッシュを照合する（鍵 = 原文 + エンジン + 言語）、
-3. 変換元言語を検出し、必要なら翻訳先を反転する、
-4. 各エンジンを順に試し、最初に成功したものを採用する、
-5. 原文と訳文を整形し、`tmux display-popup` 内の `less -R` で表示する。ポップアップ
-   は内容量に合わせてサイズ調整され（`@translate_popup_width` /
-   `@translate_popup_height` を上限とする）、選択範囲が少ないときは小さく表示される。
+1. 「Translating…」のローディング状態を即座に表示する、
+2. 設定された `@options` を読み込む、
+3. キャッシュを照合する（鍵 = 原文 + エンジン + 言語）、
+4. 変換元言語を検出し、必要なら翻訳先を反転する、
+5. 各エンジンを順に試し、最初に成功したものを採用する、
+6. 原文と訳文を整形し、ページャ（`@translate_pager`、既定 `less -R`）で表示する。
+
+ポップアップは選択範囲に合わせてサイズ調整され（`@translate_popup_width` /
+`@translate_popup_height` を上限とする）、選択範囲が少ないときは小さく表示されます。
 
 ### エンジンの追加
 

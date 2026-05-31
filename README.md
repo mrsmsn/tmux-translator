@@ -24,6 +24,8 @@ scrollable `tmux popup`.
   Japanese flips the target to English automatically.
 - **Caching** so re-translating the same text is instant and offline-friendly.
 - **Optional clipboard copy** of the translation.
+- **Loading state** — the popup opens immediately with a "Translating…"
+  indicator while the backend request is in flight.
 
 ## Requirements
 
@@ -115,6 +117,7 @@ All configuration is done with tmux user options in `~/.tmux.conf` (set them
 | `@translate_target_lang_alt` | `en` | Target used when the source already equals `@translate_target_lang` |
 | `@translate_cache` | `on` | Cache translations under `$XDG_CACHE_HOME/tmux-translate` |
 | `@translate_clipboard` | `off` | Copy the translation to the system clipboard |
+| `@translate_pager` | `less -R` | Pager command used to display the result |
 | `@translate_popup_width` | `80%` | Maximum popup width (the popup shrinks to fit the content) |
 | `@translate_popup_height` | `80%` | Maximum popup height (the popup shrinks to fit the content) |
 
@@ -131,16 +134,21 @@ set -g @plugin 'mrsmsn/tmux-translator'
 
 ## How it works
 
-`copy-pipe-and-cancel` pipes the selection into `scripts/translate.sh`, which:
+`copy-pipe-and-cancel` pipes the selection into `scripts/translate.sh` (the
+entry stage), which sizes a popup from the selection and opens
+`tmux display-popup` running `scripts/render.sh` (the popup stage). Inside the
+popup, `render.sh`:
 
-1. reads the configured `@options`,
-2. checks the cache (keyed by text + engines + languages),
-3. detects the source language and reverses the target if needed,
-4. tries each engine in order until one succeeds,
-5. formats the original + translation and shows them with `less -R` inside
-   `tmux display-popup`, sizing the popup to the content (up to
-   `@translate_popup_width` / `@translate_popup_height`) so small selections
-   get a small popup.
+1. shows a "Translating…" loading state immediately,
+2. reads the configured `@options`,
+3. checks the cache (keyed by text + engines + languages),
+4. detects the source language and reverses the target if needed,
+5. tries each engine in order until one succeeds,
+6. formats the original + translation and shows them in the pager
+   (`@translate_pager`, default `less -R`).
+
+The popup is sized to the selection (up to `@translate_popup_width` /
+`@translate_popup_height`) so small selections get a small popup.
 
 ### Adding an engine
 

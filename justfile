@@ -18,7 +18,7 @@ check: build
 
 # Static analysis only.
 lint: build
-    {{run}} shellcheck translate.tmux scripts/translate.sh scripts/helpers.sh scripts/engines/*.sh tests/stubs/tmux tests/stubs/trans tests/stubs/curl ci/run-checks.sh
+    {{run}} shellcheck translate.tmux scripts/translate.sh scripts/render.sh scripts/helpers.sh scripts/engines/*.sh tests/stubs/tmux tests/stubs/trans tests/stubs/curl ci/run-checks.sh
 
 # Tests only.
 test: build

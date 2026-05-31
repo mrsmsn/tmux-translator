@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Test stub for translate-shell `trans`.
+#   exits with $STUB_TRANS_EXIT (default 0)
+#   prints $STUB_TRANS_OUT (default a fixed translation)
+exit_code="${STUB_TRANS_EXIT:-0}"
+if [ "$exit_code" -ne 0 ]; then
+  exit "$exit_code"
+fi
+printf '%s' "${STUB_TRANS_OUT:-こんにちは世界}"

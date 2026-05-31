@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Test stub for curl.
+#   exits with $STUB_CURL_EXIT (default 0)
+#   prints the contents of $STUB_CURL_FIXTURE (a JSON file) when set
+exit_code="${STUB_CURL_EXIT:-0}"
+if [ "$exit_code" -ne 0 ]; then
+  exit "$exit_code"
+fi
+if [ -n "${STUB_CURL_FIXTURE:-}" ] && [ -f "$STUB_CURL_FIXTURE" ]; then
+  cat -- "$STUB_CURL_FIXTURE"
+fi

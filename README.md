@@ -1,5 +1,7 @@
 # tmux-translator
 
+**English** | [日本語](README.ja.md)
+
 Translate the text you select in tmux **copy-mode** and read the result in a
 floating popup — without leaving your terminal. Select an error log or a
 paragraph of docs, press one key, and the original + translation appear in a

@@ -9,12 +9,13 @@ teardown() {
   teardown_sandbox
 }
 
-@test "shows a loading indicator before the result" {
+@test "shows a loading spinner before the result" {
   export STUB_TMUX_translate_engines=google
   export STUB_CURL_FIXTURE="$FIXTURES/google.json"
   run_render "Hello, world"
   [ "$status" -eq 0 ]
   [[ "$output" == *"Translating"* ]]
+  [[ "$output" == *"⠋"* ]]            # at least one spinner frame
 }
 
 @test "translates via google and renders the result" {

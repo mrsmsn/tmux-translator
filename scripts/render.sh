@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # tmux-translator popup stage.
-# Runs inside `tmux display-popup`. Shows a loading state, performs the
-# translation through the configured engine chain, then displays the result in
-# a pager. Argument: a file containing the (trimmed) source selection.
+# Runs inside `tmux display-popup`. Animates a spinner while the translation
+# runs in the background, then displays the result in a pager.
+# Argument: a file containing the (trimmed) source selection.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -53,30 +53,12 @@ do_translate() {
   return 1
 }
 
-# show_loading <text> : immediate feedback while the backend request runs.
-show_loading() {
-  local cyan dim reset
-  cyan=$'\033[1;36m'; dim=$'\033[2m'; reset=$'\033[0m'
-  printf '%sTranslating…%s\n\n' "$cyan" "$reset"
-  printf '%s%s%s\n' "$dim" "$1" "$reset"
-}
-
-main() {
-  local txtfile="$1" text
-  text="$(cat -- "$txtfile")"
-
-  local engines source target target_alt use_cache clipboard pager
-  engines="$(get_tmux_option @translate_engines 'trans google')"
-  source="$(get_tmux_option @translate_source_lang 'auto')"
-  target="$(get_tmux_option @translate_target_lang 'ja')"
-  target_alt="$(get_tmux_option @translate_target_lang_alt 'en')"
-  use_cache="$(get_tmux_option @translate_cache 'on')"
-  clipboard="$(get_tmux_option @translate_clipboard 'off')"
-  pager="$(get_tmux_option @translate_pager 'less -R')"
-
-  show_loading "$text"
-
-  load_engines "$engines"
+# produce_result <text> <engines> <source> <target> <target_alt> <cache> <clipboard>
+# Runs the full pipeline and prints the formatted result (or error) to stdout.
+# Always exits 0 so a backgrounded call never trips the parent's set -e.
+produce_result() {
+  local text="$1" engines="$2" source="$3" target="$4" target_alt="$5" \
+        use_cache="$6" clipboard="$7"
 
   # Cache key is computed from the *original* request so it stays stable even
   # when language detection (which may need the network) is unavailable later.
@@ -113,10 +95,8 @@ main() {
     rm -f -- "$errfile"
   fi
 
-  local resultfile
-  resultfile="$(mktemp "${TMPDIR:-/tmp}/tmux-translate.XXXXXX")"
   if [ "$ok" -eq 1 ]; then
-    format_result "$text" "$translated" "$source" "$resolved_target" > "$resultfile"
+    format_result "$text" "$translated" "$source" "$resolved_target"
     if [ "$clipboard" = on ]; then
       local cb
       if cb="$(clipboard_cmd)"; then
@@ -124,13 +104,53 @@ main() {
       fi
     fi
   else
-    format_error "${err:-Translation failed.}" > "$resultfile"
+    format_error "${err:-Translation failed.}"
   fi
+  return 0
+}
 
+# spinner <pid> <message> : animate until <pid> exits, then clear the line.
+spinner() {
+  local pid="$1" msg="$2" i=0 cyan reset
+  local frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+  cyan=$'\033[1;36m'; reset=$'\033[0m'
+  tput civis 2>/dev/null || true                 # hide cursor
+  # Print at least one frame so the loading state is always shown.
+  printf '%s%s%s %s' "$cyan" "${frames[0]}" "$reset" "$msg"
+  while kill -0 "$pid" 2>/dev/null; do
+    printf '\r%s%s%s %s' "$cyan" "${frames[i % ${#frames[@]}]}" "$reset" "$msg"
+    i=$(( i + 1 ))
+    sleep 0.1 2>/dev/null || true
+  done
+  printf '\r\033[K'                              # clear the spinner line
+  tput cnorm 2>/dev/null || true                 # restore cursor
+}
+
+main() {
+  local txtfile="$1" text
+  text="$(cat -- "$txtfile")"
   rm -f -- "$txtfile"
 
-  # Run the pager (default "less -R"); the loading text is replaced by the
-  # result. Split the configured command into words.
+  local engines source target target_alt use_cache clipboard pager
+  engines="$(get_tmux_option @translate_engines 'trans google')"
+  source="$(get_tmux_option @translate_source_lang 'auto')"
+  target="$(get_tmux_option @translate_target_lang 'ja')"
+  target_alt="$(get_tmux_option @translate_target_lang_alt 'en')"
+  use_cache="$(get_tmux_option @translate_cache 'on')"
+  clipboard="$(get_tmux_option @translate_clipboard 'off')"
+  pager="$(get_tmux_option @translate_pager 'less -R')"
+
+  load_engines "$engines"
+
+  local resultfile pid
+  resultfile="$(mktemp "${TMPDIR:-/tmp}/tmux-translate.XXXXXX")"
+  produce_result "$text" "$engines" "$source" "$target" "$target_alt" \
+    "$use_cache" "$clipboard" > "$resultfile" &
+  pid=$!
+  spinner "$pid" "Translating…"
+  wait "$pid" 2>/dev/null || true
+
+  # Show the result (loading line is gone); default pager "less -R".
   local pager_arr
   read -r -a pager_arr <<< "$pager"
   "${pager_arr[@]}" "$resultfile"

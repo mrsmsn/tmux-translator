@@ -146,8 +146,9 @@ set -g @plugin 'mrsmsn/tmux-translator'
 5. 各エンジンを順に試し、最初に成功したものを採用する、
 6. 原文と訳文を整形し、ページャ（`@translate_pager`、既定 `less -R`）で表示する。
 
-ポップアップは選択範囲に合わせてサイズ調整され（`@translate_popup_width` /
-`@translate_popup_height` を上限とする）、選択範囲が少ないときは小さく表示されます。
+ポップアップは選択範囲に合わせてサイズ調整され（長い行が折り返した際に必要となる
+高さも考慮。`@translate_popup_width` / `@translate_popup_height` を上限とする）、
+選択範囲が少ないときは小さく表示されます。
 
 ### エンジンの追加
 

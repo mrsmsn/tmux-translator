@@ -34,6 +34,18 @@ teardown() {
   [ "$(popup_arg -h)" -lt 12 ]
 }
 
+@test "popup height accounts for line wrapping" {
+  export STUB_TMUX_translate_popup_width=20%   # max width -> 40 cols
+  export STUB_CLIENT_WIDTH=200
+  export STUB_CLIENT_HEIGHT=100                 # tall enough not to clamp height
+  run_translate "$(printf 'x%.0s' {1..100})"    # one 100-col line, wraps at ~38
+  [ "$status" -eq 0 ]
+  [ "$(popup_arg -w)" -eq 40 ]
+  # 100 cols / 38 -> 3 visual rows, counted for source + translation + headers,
+  # so the height is well above the no-wrap minimum (which would be ~8).
+  [ "$(popup_arg -h)" -ge 10 ]
+}
+
 @test "popup is capped at the configured maximum" {
   export STUB_TMUX_translate_popup_width=10%
   export STUB_TMUX_translate_popup_height=10%

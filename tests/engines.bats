@@ -29,7 +29,7 @@ teardown() {
   export STUB_CURL_EXIT=7
   run translate_google "Hello" en ja
   [ "$status" -ne 0 ]
-  [[ "$output" == *"ネットワーク"* ]]
+  [[ "$output" == *"network"* ]]
 }
 
 @test "translate_trans returns the brief translation" {

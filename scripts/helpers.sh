@@ -87,9 +87,9 @@ format_result() {
   local src="$1" dst="$2" slang="$3" tlang="$4"
   local cyan green reset
   cyan=$'\033[1;36m'; green=$'\033[1;32m'; reset=$'\033[0m'
-  printf '%s── 原文 (%s) ──%s\n' "$cyan" "$slang" "$reset"
+  printf '%s── Source (%s) ──%s\n' "$cyan" "$slang" "$reset"
   printf '%s\n\n' "$src"
-  printf '%s── 翻訳 (%s) ──%s\n' "$green" "$tlang" "$reset"
+  printf '%s── Translation (%s) ──%s\n' "$green" "$tlang" "$reset"
   printf '%s\n' "$dst"
 }
 
@@ -97,8 +97,8 @@ format_result() {
 format_error() {
   local red bold reset
   red=$'\033[1;31m'; bold=$'\033[1m'; reset=$'\033[0m'
-  printf '%s── 翻訳エラー ──%s\n\n' "$red" "$reset"
+  printf '%s── Translation error ──%s\n\n' "$red" "$reset"
   printf '%s\n\n' "$1"
-  printf '%sヒント:%s 依存ツール (translate-shell / curl / jq) とネットワーク接続、\n' "$bold" "$reset"
-  printf '       および @translate_engines の設定を確認してください。\n'
+  printf '%sHint:%s check the backends (translate-shell / curl / jq), your\n' "$bold" "$reset"
+  printf '      network connection, and the @translate_engines setting.\n'
 }

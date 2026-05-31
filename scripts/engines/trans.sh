@@ -6,15 +6,15 @@
 translate_trans() {
   local text="$1" source="$2" target="$3" out
   if ! command -v trans >/dev/null 2>&1; then
-    echo "trans: translate-shell (trans) が見つかりません" >&2
+    echo "trans: translate-shell (trans) not found" >&2
     return 1
   fi
   if ! out="$(trans -b -no-ansi -s "$source" -t "$target" -- "$text" 2>/dev/null)"; then
-    echo "trans: 翻訳リクエストに失敗しました（ネットワーク/レート制限の可能性）" >&2
+    echo "trans: translation request failed (possible network or rate-limit issue)" >&2
     return 1
   fi
   if [ -z "$out" ]; then
-    echo "trans: 空の応答が返されました" >&2
+    echo "trans: empty response" >&2
     return 1
   fi
   printf '%s' "$out"

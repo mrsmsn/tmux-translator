@@ -7,10 +7,10 @@ scrollable `tmux popup`.
 
 ```
 ┌──────────────────────────────────────────┐
-│ ── 原文 (en) ──                            │
+│ ── Source (en) ──                          │
 │ The connection was refused by the server. │
 │                                            │
-│ ── 翻訳 (ja) ──                            │
+│ ── Translation (ja) ──                     │
 │ 接続はサーバーによって拒否されました。       │
 └──────────────────────────────────────────┘
 ```
@@ -148,7 +148,7 @@ non-zero on failure) and optionally `detect_<name> <text>`. Add its name to
 
 ## Troubleshooting
 
-- **"翻訳エラー" popup** — no engine succeeded. Check that `trans` or
+- **"Translation error" popup** — no engine succeeded. Check that `trans` or
   `curl`+`jq` are installed and that you have network access. Try a single
   engine, e.g. `set -g @translate_engines 'google'`.
 - **No popup appears** — confirm `tmux -V` is `>= 3.2` and `mode-keys` is `vi`.

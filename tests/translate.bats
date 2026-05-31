@@ -56,7 +56,7 @@ teardown() {
   export STUB_CURL_FIXTURE="$FIXTURES/google.json"   # detected lang = ja
   run_translate "こんにちは世界"
   [ "$status" -eq 0 ]
-  popup_file_content | grep -q "翻訳 (en)"
+  popup_file_content | grep -q "Translation (en)"
 }
 
 @test "shows an error popup when all engines fail" {
@@ -65,5 +65,5 @@ teardown() {
   export STUB_CURL_EXIT=1
   run_translate "Hello, world"
   [ "$status" -eq 0 ]
-  popup_file_content | grep -q "翻訳エラー"
+  popup_file_content | grep -q "Translation error"
 }

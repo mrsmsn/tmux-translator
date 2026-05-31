@@ -67,7 +67,7 @@ teardown() {
 @test "format_result includes both languages" {
   run format_result "hello" "やあ" en ja
   [ "$status" -eq 0 ]
-  [[ "$output" == *"原文 (en)"* ]]
-  [[ "$output" == *"翻訳 (ja)"* ]]
+  [[ "$output" == *"Source (en)"* ]]
+  [[ "$output" == *"Translation (ja)"* ]]
   [[ "$output" == *"やあ"* ]]
 }

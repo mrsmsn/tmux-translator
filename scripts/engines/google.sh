@@ -16,17 +16,17 @@ _google_fetch() {
 translate_google() {
   local text="$1" source="$2" target="$3" json out
   if ! command -v curl >/dev/null 2>&1; then
-    echo "google: curl が見つかりません" >&2; return 1
+    echo "google: curl not found" >&2; return 1
   fi
   if ! command -v jq >/dev/null 2>&1; then
-    echo "google: jq が見つかりません" >&2; return 1
+    echo "google: jq not found" >&2; return 1
   fi
   if ! json="$(_google_fetch "$source" "$target" "$text")"; then
-    echo "google: ネットワークエラーまたはレート制限です" >&2; return 1
+    echo "google: network error or rate limit" >&2; return 1
   fi
   out="$(printf '%s' "$json" | jq -r '[.[0][]? | .[0]] | join("")' 2>/dev/null)"
   if [ -z "$out" ]; then
-    echo "google: レスポンスの解析に失敗しました" >&2; return 1
+    echo "google: failed to parse response" >&2; return 1
   fi
   printf '%s' "$out"
 }

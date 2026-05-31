@@ -45,10 +45,10 @@ do_translate() {
         return 0
       fi
     else
-      echo "engine '$eng' は未定義です" >&2
+      echo "engine '$eng' is not defined" >&2
     fi
   done
-  echo "すべてのエンジンで翻訳に失敗しました。" >&2
+  echo "All configured engines failed to translate." >&2
   return 1
 }
 
@@ -123,7 +123,7 @@ main() {
       fi
     fi
   else
-    format_error "${err:-翻訳に失敗しました}" > "$tmpfile"
+    format_error "${err:-Translation failed.}" > "$tmpfile"
   fi
 
   tmux display-popup -w "$width" -h "$height" -E \

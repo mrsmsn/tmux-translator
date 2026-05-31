@@ -34,3 +34,10 @@ popup_file_content() {
   [ -n "$fname" ] || return 1
   cat -- "$TMPDIR/$fname"
 }
+
+# Print the value passed to a display-popup flag (e.g. -w or -h).
+popup_arg() {
+  awk -v flag="$1" '/^display-popup/ {
+    for (i = 1; i < NF; i++) if ($i == flag) { print $(i + 1); exit }
+  }' "$STUB_TMUX_LOG"
+}

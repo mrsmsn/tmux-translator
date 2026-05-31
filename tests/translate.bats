@@ -59,6 +59,31 @@ teardown() {
   popup_file_content | grep -q "Translation (en)"
 }
 
+@test "popup shrinks to fit a small selection" {
+  export STUB_TMUX_translate_engines=google
+  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
+  export STUB_CLIENT_WIDTH=200
+  export STUB_CLIENT_HEIGHT=50
+  run_translate "Hello, world"
+  [ "$status" -eq 0 ]
+  # Tiny content stays far below the 80% cap (160x40).
+  [ "$(popup_arg -w)" -lt 40 ]
+  [ "$(popup_arg -h)" -lt 12 ]
+}
+
+@test "popup is capped at the configured maximum" {
+  export STUB_TMUX_translate_engines=google
+  export STUB_TMUX_translate_popup_width=10%
+  export STUB_TMUX_translate_popup_height=10%
+  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
+  export STUB_CLIENT_WIDTH=200    # 10% -> 20 cols
+  export STUB_CLIENT_HEIGHT=50    # 10% -> 5 rows
+  run_translate "Hello, world"
+  [ "$status" -eq 0 ]
+  [ "$(popup_arg -w)" -eq 20 ]
+  [ "$(popup_arg -h)" -eq 5 ]
+}
+
 @test "shows an error popup when all engines fail" {
   export STUB_TMUX_translate_engines="trans google"
   export STUB_TRANS_EXIT=1

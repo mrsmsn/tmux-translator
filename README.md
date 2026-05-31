@@ -115,8 +115,8 @@ All configuration is done with tmux user options in `~/.tmux.conf` (set them
 | `@translate_target_lang_alt` | `en` | Target used when the source already equals `@translate_target_lang` |
 | `@translate_cache` | `on` | Cache translations under `$XDG_CACHE_HOME/tmux-translate` |
 | `@translate_clipboard` | `off` | Copy the translation to the system clipboard |
-| `@translate_popup_width` | `80%` | Popup width |
-| `@translate_popup_height` | `80%` | Popup height |
+| `@translate_popup_width` | `80%` | Maximum popup width (the popup shrinks to fit the content) |
+| `@translate_popup_height` | `80%` | Maximum popup height (the popup shrinks to fit the content) |
 
 Example:
 
@@ -138,7 +138,9 @@ set -g @plugin 'mrsmsn/tmux-translator'
 3. detects the source language and reverses the target if needed,
 4. tries each engine in order until one succeeds,
 5. formats the original + translation and shows them with `less -R` inside
-   `tmux display-popup`.
+   `tmux display-popup`, sizing the popup to the content (up to
+   `@translate_popup_width` / `@translate_popup_height`) so small selections
+   get a small popup.
 
 ### Adding an engine
 

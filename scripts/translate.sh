@@ -8,6 +8,10 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/helpers.sh
 source "$SCRIPT_DIR/helpers.sh"
 
+# Smallest popup that still reads well (wide enough for the header line).
+readonly POPUP_MIN_WIDTH=24
+readonly POPUP_MIN_HEIGHT=3
+
 # load_engines <engines> -> sources each engine file that exists.
 load_engines() {
   local eng
@@ -126,7 +130,20 @@ main() {
     format_error "${err:-Translation failed.}" > "$tmpfile"
   fi
 
-  tmux display-popup -w "$width" -h "$height" -E \
+  # Size the popup to the content, capped at @translate_popup_{width,height}
+  # (treated as maxima) and floored at a readable minimum.
+  local rows cols client_w client_h max_w max_h popup_w popup_h
+  read -r rows cols < <(text_dims "$tmpfile")
+  client_w="$(tmux display-message -p '#{client_width}' 2>/dev/null)"
+  client_h="$(tmux display-message -p '#{client_height}' 2>/dev/null)"
+  client_w="${client_w:-80}"; client_h="${client_h:-24}"
+  max_w="$(resolve_size "$width" "$client_w")"
+  max_h="$(resolve_size "$height" "$client_h")"
+  # +3 cols (border + margin), +3 rows (border + less prompt line).
+  popup_w="$(clamp "$(( cols + 3 ))" "$POPUP_MIN_WIDTH" "$max_w")"
+  popup_h="$(clamp "$(( rows + 3 ))" "$POPUP_MIN_HEIGHT" "$max_h")"
+
+  tmux display-popup -w "$popup_w" -h "$popup_h" -E \
     "less -R -- '$tmpfile'; rm -f -- '$tmpfile'"
 }
 

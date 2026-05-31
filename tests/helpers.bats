@@ -71,3 +71,34 @@ teardown() {
   [[ "$output" == *"Translation (ja)"* ]]
   [[ "$output" == *"やあ"* ]]
 }
+
+@test "text_dims counts rows and ASCII width" {
+  printf 'abc\nde\n' > "$SANDBOX/f"
+  run text_dims "$SANDBOX/f"
+  [ "$output" = "2 3" ]
+}
+
+@test "text_dims counts CJK characters as double-width" {
+  printf 'ややや\n' > "$SANDBOX/f"   # 3 chars x 2 cols
+  run text_dims "$SANDBOX/f"
+  [ "$output" = "1 6" ]
+}
+
+@test "text_dims ignores ANSI colour codes" {
+  printf '\033[1;36mabc\033[0m\n' > "$SANDBOX/f"
+  run text_dims "$SANDBOX/f"
+  [ "$output" = "1 3" ]
+}
+
+@test "clamp constrains to range; max wins when max<min" {
+  [ "$(clamp 5 1 10)" = "5" ]
+  [ "$(clamp 0 2 10)" = "2" ]
+  [ "$(clamp 99 2 10)" = "10" ]
+  [ "$(clamp 50 24 10)" = "10" ]
+}
+
+@test "resolve_size handles percentages and bare numbers" {
+  [ "$(resolve_size 80% 100)" = "80" ]
+  [ "$(resolve_size 50% 200)" = "100" ]
+  [ "$(resolve_size 60 999)" = "60" ]
+}

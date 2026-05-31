@@ -93,6 +93,52 @@ format_result() {
   printf '%s\n' "$dst"
 }
 
+# text_dims <file> -> "<rows> <cols>" : line count and max display width of the
+# file, ignoring ANSI SGR colour codes. Display width is approximated from the
+# UTF-8 lead byte (1-2 byte chars = 1 column, 3-4 byte chars = 2 columns) so
+# that CJK and emoji are counted as double-width. Locale-independent.
+text_dims() {
+  LC_ALL=C awk '
+    BEGIN {
+      for (i = 0; i < 256; i++) ord[sprintf("%c", i)] = i
+      esc = sprintf("%c", 27); re = esc "\\[[0-9;]*m"; maxw = 0
+    }
+    {
+      line = $0; gsub(re, "", line)
+      w = 0; n = length(line); i = 1
+      while (i <= n) {
+        b = ord[substr(line, i, 1)]
+        if (b < 128)      { w += 1; i += 1 }
+        else if (b >= 240) { w += 2; i += 4 }
+        else if (b >= 224) { w += 2; i += 3 }
+        else if (b >= 192) { w += 1; i += 2 }
+        else               { i += 1 }
+      }
+      if (w > maxw) maxw = w
+    }
+    END { print NR + 0, maxw + 0 }
+  ' "$1"
+}
+
+# clamp <value> <min> <max> -> value constrained to [min, max].
+# When max < min, max wins (never exceed the upper bound, e.g. the screen).
+clamp() {
+  local v="$1" lo="$2" hi="$3"
+  [ "$v" -lt "$lo" ] && v="$lo"
+  [ "$v" -gt "$hi" ] && v="$hi"
+  printf '%s' "$v"
+}
+
+# resolve_size <spec> <total> -> absolute cell count.
+# "80%" -> 80% of <total>; a bare number is returned as-is.
+resolve_size() {
+  local spec="$1" total="$2"
+  case "$spec" in
+    *%) printf '%s' "$(( total * ${spec%\%} / 100 ))" ;;
+    *)  printf '%s' "$spec" ;;
+  esac
+}
+
 # format_error <message>
 format_error() {
   local red bold reset

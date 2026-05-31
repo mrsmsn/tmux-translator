@@ -29,8 +29,8 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
 | `@translate_target_lang_alt` | `en` | 原文が `@translate_target_lang` と同じ場合の代替変換先 |
 | `@translate_cache` | `on` | 翻訳キャッシュの有効化 |
 | `@translate_clipboard` | `off` | 翻訳結果をシステムクリップボードへコピー |
-| `@translate_popup_width` | `80%` | ポップアップ幅 |
-| `@translate_popup_height` | `80%` | ポップアップ高さ |
+| `@translate_popup_width` | `80%` | ポップアップ幅の上限（内容量に合わせて縮小） |
+| `@translate_popup_height` | `80%` | ポップアップ高さの上限（内容量に合わせて縮小） |
 
 ## 4. 非機能要件
 
@@ -53,6 +53,7 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
 * 標準入力 (stdin) からテキストを受け取る（空入力は no-op）。
 * `@options` を読み込み、キャッシュ照合 → 言語検出・反転 → エンジン順次試行 → 整形 → `tmux display-popup` 表示を行う。
 * 翻訳結果と原文を ANSI 色付きで整形し、`less -R` でスクロール表示する。
+* ポップアップは内容量（行数・最大表示幅。ANSI 除去・CJK は 2 桁換算）に合わせてサイズ調整し、`@translate_popup_width`/`_height` を上限、読みやすい最小値を下限とする。選択範囲が少ないときは小さく表示する。
 
 ### C. ヘルパ (`scripts/helpers.sh`)
 

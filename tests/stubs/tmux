@@ -13,7 +13,18 @@ case "$1" in
     var="STUB_TMUX_${name#@}"
     printf '%s' "${!var:-}"
     ;;
-  display-popup|bind-key|display-message)
+  display-message)
+    if [ "${2:-}" = "-p" ]; then
+      case "${3:-}" in
+        *client_width*)  printf '%s\n' "${STUB_CLIENT_WIDTH:-80}" ;;
+        *client_height*) printf '%s\n' "${STUB_CLIENT_HEIGHT:-24}" ;;
+        *) : ;;
+      esac
+    elif [ -n "${STUB_TMUX_LOG:-}" ]; then
+      { printf '%s' "$1"; shift; for a in "$@"; do printf ' %s' "$a"; done; printf '\n'; } >> "$STUB_TMUX_LOG"
+    fi
+    ;;
+  display-popup|bind-key)
     if [ -n "${STUB_TMUX_LOG:-}" ]; then
       { printf '%s' "$1"; shift; for a in "$@"; do printf ' %s' "$a"; done; printf '\n'; } >> "$STUB_TMUX_LOG"
     fi

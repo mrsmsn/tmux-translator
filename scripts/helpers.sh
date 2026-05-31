@@ -120,6 +120,35 @@ text_dims() {
   ' "$1"
 }
 
+# wrapped_rows <file> <wrap-width> -> number of visual rows the file occupies
+# once each line is wrapped at <wrap-width> columns. Uses the same display-width
+# approximation as text_dims. An empty line still counts as one row.
+wrapped_rows() {
+  LC_ALL=C awk -v W="$2" '
+    BEGIN {
+      for (i = 0; i < 256; i++) ord[sprintf("%c", i)] = i
+      esc = sprintf("%c", 27); re = esc "\\[[0-9;]*m"; total = 0
+      if (W < 1) W = 1
+    }
+    {
+      line = $0; gsub(re, "", line)
+      w = 0; n = length(line); i = 1
+      while (i <= n) {
+        b = ord[substr(line, i, 1)]
+        if (b < 128)      { w += 1; i += 1 }
+        else if (b >= 240) { w += 2; i += 4 }
+        else if (b >= 224) { w += 2; i += 3 }
+        else if (b >= 192) { w += 1; i += 2 }
+        else               { i += 1 }
+      }
+      rows = int((w + W - 1) / W)
+      if (rows < 1) rows = 1
+      total += rows
+    }
+    END { print total + 0 }
+  ' "$1"
+}
+
 # clamp <value> <min> <max> -> value constrained to [min, max].
 # When max < min, max wins (never exceed the upper bound, e.g. the screen).
 clamp() {

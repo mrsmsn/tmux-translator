@@ -147,8 +147,9 @@ popup, `render.sh`:
 6. formats the original + translation and shows them in the pager
    (`@translate_pager`, default `less -R`).
 
-The popup is sized to the selection (up to `@translate_popup_width` /
-`@translate_popup_height`) so small selections get a small popup.
+The popup is sized to the selection — including the extra height needed once
+long lines wrap — up to `@translate_popup_width` / `@translate_popup_height`, so
+small selections get a small popup.
 
 ### Adding an engine
 

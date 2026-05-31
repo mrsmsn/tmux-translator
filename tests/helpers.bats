@@ -90,6 +90,16 @@ teardown() {
   [ "$output" = "1 3" ]
 }
 
+@test "wrapped_rows counts visual rows after wrapping" {
+  printf 'xxxxxxxxxx\n' > "$SANDBOX/f"     # 10 cols, wrap at 4 -> 3 rows
+  [ "$(wrapped_rows "$SANDBOX/f" 4)" = "3" ]
+}
+
+@test "wrapped_rows sums lines and counts an empty line as one row" {
+  printf 'xxxxxxxxxx\n\nyy\n' > "$SANDBOX/f"  # 3 + 1 + 1
+  [ "$(wrapped_rows "$SANDBOX/f" 4)" = "5" ]
+}
+
 @test "clamp constrains to range; max wins when max<min" {
   [ "$(clamp 5 1 10)" = "5" ]
   [ "$(clamp 0 2 10)" = "2" ]

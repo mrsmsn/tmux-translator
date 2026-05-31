@@ -38,9 +38,8 @@ main() {
   # The result (original + translation) is not known yet, so estimate the popup
   # size from the source selection: the result shows the source plus a
   # similar-length translation and a couple of header lines.
-  local srows scols est_rows est_cols
-  read -r srows scols < <(text_dims "$txtfile")
-  est_rows=$(( srows * 2 + 3 ))
+  local scols est_cols
+  read -r _ scols < <(text_dims "$txtfile")
   est_cols=$scols
   [ "$est_cols" -lt "$POPUP_MIN_WIDTH" ] && est_cols=$POPUP_MIN_WIDTH
 
@@ -50,8 +49,18 @@ main() {
   client_w="${client_w:-80}"; client_h="${client_h:-24}"
   max_w="$(resolve_size "$width" "$client_w")"
   max_h="$(resolve_size "$height" "$client_h")"
-  # +3 cols (border + margin), +3 rows (border + pager prompt line).
+
+  # Decide the width first (+3 cols for border + margin), then count how many
+  # visual rows the source needs once it wraps at the popup's interior width so
+  # long lines that wrap get enough height. The result shows the source plus a
+  # similar-length translation and header lines.
+  local wrap_w vis est_rows
   popup_w="$(clamp "$(( est_cols + 3 ))" "$POPUP_MIN_WIDTH" "$max_w")"
+  wrap_w=$(( popup_w - 2 ))
+  [ "$wrap_w" -lt 1 ] && wrap_w=1
+  vis="$(wrapped_rows "$txtfile" "$wrap_w")"
+  est_rows=$(( vis * 2 + 3 ))
+  # +3 rows (border + pager prompt line).
   popup_h="$(clamp "$(( est_rows + 3 ))" "$POPUP_MIN_HEIGHT" "$max_h")"
 
   tmux display-popup -w "$popup_w" -h "$popup_h" -E \

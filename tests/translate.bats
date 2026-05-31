@@ -15,53 +15,16 @@ teardown() {
   [ ! -s "$STUB_TMUX_LOG" ]
 }
 
-@test "translates via google and opens a popup" {
-  export STUB_TMUX_translate_engines=google
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
+@test "opens a popup that runs the render stage" {
+  export STUB_CLIENT_WIDTH=200
+  export STUB_CLIENT_HEIGHT=50
   run_translate "Hello, world"
   [ "$status" -eq 0 ]
   grep -q 'display-popup' "$STUB_TMUX_LOG"
-  popup_file_content | grep -q "Hello, world"
-}
-
-@test "result is cached and served when the backend later fails" {
-  export STUB_TMUX_translate_engines=google
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
-  run_translate "Hello, world"
-  [ "$status" -eq 0 ]
-  # A cache file must now exist.
-  [ -n "$(ls -A "$XDG_CACHE_HOME/tmux-translate" 2>/dev/null)" ]
-
-  # Second run with the backend broken still succeeds from cache.
-  : > "$STUB_TMUX_LOG"
-  export STUB_CURL_EXIT=1
-  run_translate "Hello, world"
-  [ "$status" -eq 0 ]
-  popup_file_content | grep -q "Hello, world"
-}
-
-@test "falls back to the next engine when the first fails" {
-  export STUB_TMUX_translate_engines="trans google"
-  export STUB_TRANS_EXIT=1
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
-  run_translate "Hello, world"
-  [ "$status" -eq 0 ]
-  popup_file_content | grep -q "Hello, world"
-}
-
-@test "reverses target language when the source already equals the target" {
-  export STUB_TMUX_translate_engines=google
-  export STUB_TMUX_translate_target_lang=ja
-  export STUB_TMUX_translate_target_lang_alt=en
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"   # detected lang = ja
-  run_translate "こんにちは世界"
-  [ "$status" -eq 0 ]
-  popup_file_content | grep -q "Translation (en)"
+  grep -q 'render.sh' "$STUB_TMUX_LOG"
 }
 
 @test "popup shrinks to fit a small selection" {
-  export STUB_TMUX_translate_engines=google
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
   export STUB_CLIENT_WIDTH=200
   export STUB_CLIENT_HEIGHT=50
   run_translate "Hello, world"
@@ -72,23 +35,13 @@ teardown() {
 }
 
 @test "popup is capped at the configured maximum" {
-  export STUB_TMUX_translate_engines=google
   export STUB_TMUX_translate_popup_width=10%
   export STUB_TMUX_translate_popup_height=10%
-  export STUB_CURL_FIXTURE="$FIXTURES/google.json"
   export STUB_CLIENT_WIDTH=200    # 10% -> 20 cols
   export STUB_CLIENT_HEIGHT=50    # 10% -> 5 rows
-  run_translate "Hello, world"
+  # A tall selection so the estimate exceeds the cap and must be clamped.
+  run_translate "$(printf 'line\n%.0s' {1..20})"
   [ "$status" -eq 0 ]
   [ "$(popup_arg -w)" -eq 20 ]
   [ "$(popup_arg -h)" -eq 5 ]
-}
-
-@test "shows an error popup when all engines fail" {
-  export STUB_TMUX_translate_engines="trans google"
-  export STUB_TRANS_EXIT=1
-  export STUB_CURL_EXIT=1
-  run_translate "Hello, world"
-  [ "$status" -eq 0 ]
-  popup_file_content | grep -q "Translation error"
 }

@@ -22,9 +22,19 @@ teardown_sandbox() {
   [ -n "${SANDBOX:-}" ] && rm -rf -- "$SANDBOX"
 }
 
-# Run the main translate script with the given text on stdin.
+# Run the entry stage with the given text on stdin.
 run_translate() {
   run bash -c 'printf "%s" "$1" | "$2"' _ "$1" "$SCRIPTS/translate.sh"
+}
+
+# Run the popup (render) stage on the given text. Uses `cat` as the pager so
+# the formatted result is captured on stdout instead of opening a real pager.
+run_render() {
+  local f
+  f="$(mktemp "$SANDBOX/src.XXXXXX")"
+  printf '%s' "$1" > "$f"
+  export STUB_TMUX_translate_pager=cat
+  run bash "$SCRIPTS/render.sh" "$f"
 }
 
 # Print the contents of the file handed to `less` inside display-popup.

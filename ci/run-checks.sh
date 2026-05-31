@@ -9,6 +9,7 @@ echo "==> shellcheck"
 shellcheck \
   translate.tmux \
   scripts/translate.sh \
+  scripts/render.sh \
   scripts/helpers.sh \
   scripts/engines/*.sh \
   tests/stubs/tmux tests/stubs/trans tests/stubs/curl \

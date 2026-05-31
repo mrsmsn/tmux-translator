@@ -29,6 +29,7 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
 | `@translate_target_lang_alt` | `en` | 原文が `@translate_target_lang` と同じ場合の代替変換先 |
 | `@translate_cache` | `on` | 翻訳キャッシュの有効化 |
 | `@translate_clipboard` | `off` | 翻訳結果をシステムクリップボードへコピー |
+| `@translate_pager` | `less -R` | 結果表示に使うページャコマンド |
 | `@translate_popup_width` | `80%` | ポップアップ幅の上限（内容量に合わせて縮小） |
 | `@translate_popup_height` | `80%` | ポップアップ高さの上限（内容量に合わせて縮小） |
 
@@ -48,18 +49,23 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
 * `mode-keys vi` を前提とする。
 * tmux のバージョンを判定し、3.2 未満なら `display-message` で警告する。
 
-### B. 本体スクリプト (`scripts/translate.sh`)
+### B. エントリ段 (`scripts/translate.sh`)
 
-* 標準入力 (stdin) からテキストを受け取る（空入力は no-op）。
-* `@options` を読み込み、キャッシュ照合 → 言語検出・反転 → エンジン順次試行 → 整形 → `tmux display-popup` 表示を行う。
-* 翻訳結果と原文を ANSI 色付きで整形し、`less -R` でスクロール表示する。
-* ポップアップは内容量（行数・最大表示幅。ANSI 除去・CJK は 2 桁換算）に合わせてサイズ調整し、`@translate_popup_width`/`_height` を上限、読みやすい最小値を下限とする。選択範囲が少ないときは小さく表示する。
+* 標準入力 (stdin) から選択範囲を受け取る（空入力は no-op）。
+* 選択範囲を一時ファイルに書き出し、選択範囲の行数・最大表示幅（ANSI 除去・CJK は 2 桁換算）からポップアップサイズを見積もる。`@translate_popup_width`/`_height` を上限、読みやすい最小値を下限とし、選択範囲が少ないときは小さく表示する。
+* `scripts/render.sh` を実行する `tmux display-popup` を開く（翻訳処理はポップアップ内で行うため、リクエスト中もローディングが見える）。
 
-### C. ヘルパ (`scripts/helpers.sh`)
+### C. ポップアップ段 (`scripts/render.sh`)
+
+* ポップアップ内で実行される。まず「Translating…」のローディング表示を即座に出す。
+* `@options` を読み込み、キャッシュ照合 → 言語検出・反転 → エンジン順次試行 → 整形を行う。
+* 翻訳結果と原文を ANSI 色付きで整形し、ページャ（`@translate_pager`、既定 `less -R`）で表示する。
+
+### D. ヘルパ (`scripts/helpers.sh`)
 
 * `get_tmux_option` / バージョン比較 / キャッシュ（鍵生成・get・set）/ クリップボードコマンド検出 / 出力整形。
 
-### D. エンジン抽象層 (`scripts/engines/<name>.sh`)
+### E. エンジン抽象層 (`scripts/engines/<name>.sh`)
 
 * 各エンジンは `translate_<name> <text> <source> <target>`（成功時に訳文を stdout、失敗時に exit != 0）を定義する。任意で `detect_<name> <text>` を定義する。
 * v1 同梱: `trans`（translate-shell・既定）、`google`（curl/jq による Google 無料エンドポイント・フォールバック）。
@@ -73,6 +79,7 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
   * 翻訳キャッシュ（同一原文の再翻訳を回避、オフライン再利用。`$XDG_CACHE_HOME/tmux-translate`）。
   * 言語自動検出と target 反転（`source=auto` かつ検出言語が `target` と一致する場合に `*_alt` へ反転）。
   * 翻訳結果のクリップボードコピー（`@translate_clipboard on` 時）。
+  * ローディング表示（翻訳処理をポップアップ内で行い、リクエスト中に「Translating…」を表示）。
   * **対象外:** 翻訳履歴ログ。
 * **実装シェル:** `bash` 固定（`#!/usr/bin/env bash`）。ユーザーの対話シェル（bash/zsh/fish）には非依存。README に各シェルの依存 PATH 手順を記載する。
 * **ハッシュの可搬性:** キャッシュ鍵は `shasum`／`sha1sum`／`cksum` のいずれか利用可能なものを用いる（macOS/Linux 両対応）。
@@ -86,6 +93,6 @@ Tmux のコピーモード（vi バインド）で選択したターミナル上
 
 * `~/.tmux.conf` への追加スニペット（TPM / 手動）。→ `README.md`
 * `translate.tmux`（TPM エントリ）。
-* `scripts/translate.sh` 本体、`scripts/helpers.sh`、`scripts/engines/{trans,google}.sh`。
+* `scripts/translate.sh`（エントリ段）、`scripts/render.sh`（ポップアップ段）、`scripts/helpers.sh`、`scripts/engines/{trans,google}.sh`。
 * `README.md`（概要・依存インストール（macOS/Linux）・TPM/手動導入・`@options` 一覧・使い方・トラブルシュート）。
 * `tests/`（bats テスト・スタブ・fixture）、`Containerfile`、`justfile`、`.github/workflows/ci.yml`、`LICENSE`（MIT）。

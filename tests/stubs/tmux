@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Test stub for tmux.
+#   show-options -gqv <name>  -> echoes $STUB_TMUX_<name-without-@>
+#   display-popup ...         -> appends the invocation to $STUB_TMUX_LOG
+#   -V                        -> echoes $STUB_TMUX_VERSION (default "tmux 3.3a")
+#   anything else             -> no-op
+case "$1" in
+  -V)
+    printf '%s\n' "${STUB_TMUX_VERSION:-tmux 3.3a}"
+    ;;
+  show-options)
+    name="${!#}"               # last argument is the option name
+    var="STUB_TMUX_${name#@}"
+    printf '%s' "${!var:-}"
+    ;;
+  display-popup|bind-key|display-message)
+    if [ -n "${STUB_TMUX_LOG:-}" ]; then
+      { printf '%s' "$1"; shift; for a in "$@"; do printf ' %s' "$a"; done; printf '\n'; } >> "$STUB_TMUX_LOG"
+    fi
+    ;;
+  *)
+    : ;;
+esac

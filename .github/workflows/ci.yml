@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # podman is preinstalled on ubuntu-latest runners. Build and run the same
+      # container image used locally so CI and local checks are identical.
+      - name: Build CI image
+        run: podman build -t tmux-translator-ci -f Containerfile .
+
+      - name: Lint and test
+        run: podman run --rm -v "$PWD:/work:Z" tmux-translator-ci bash ci/run-checks.sh
